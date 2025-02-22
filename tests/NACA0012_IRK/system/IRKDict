@@ -1,0 +1,35 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2.4.0                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      adjointDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+//scheme          Gauss24;
+scheme          Radau23;
+
+nTimeSteps          400;
+maxSweep            20;
+
+testInterp          no;
+
+relaxU              1.0;
+relaxP              1.0;
+relaxPhi            1.0;
+
+relaxStage1         0.8;
+relaxStage2         0.8;
+relaxStage3         0.8;
+
+adjInitGuessOpt     lastStep;
+//adjInitGuessOpt     allZero;
+
