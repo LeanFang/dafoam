@@ -19,7 +19,7 @@ if gcomm.rank == 0:
 U0 = 1.0
 
 daOptions = {
-    "solverName": "DAPimpleFoam",
+    "solverName": "DAIrkPimpleFoam",
 }
 
 DASolver = PYDAFOAM(options=daOptions, comm=gcomm)
@@ -35,7 +35,7 @@ UNorm = gcomm.allreduce(UNorm, op=MPI.SUM)
 print("UNorm", UNorm)
 
 if abs(56.45964200732875 - UNorm) / 56.45964200732875 > 1e-6:
-    print("DAPimpleDyMFoam test failed!")
+    print("DAIrkPimpleFoam test failed!")
     exit(1)
 else:
-    print("DAPimpleDyMFoam test passed!")
+    print("DAIrkPimpleFoam test passed!")
