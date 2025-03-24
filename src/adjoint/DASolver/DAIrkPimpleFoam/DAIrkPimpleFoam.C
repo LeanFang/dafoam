@@ -605,6 +605,53 @@ label DAIrkPimpleFoam::solvePrimal()
         runTime.printExecutionTime(Info);
     }
 
+    // ************************************************************************* //
+    // Adjoint starts here
+
+    // Initialize all-zero adjoint equation rhs (reversed sign):
+    volVectorField mAdjRhsU1("mAdjRhsU1", 0.0 * U);
+    volScalarField mAdjRhsP1("mAdjRhsP1", 0.0 * p);
+    surfaceScalarField mAdjRhsPhi1("mAdjRhsPhi1", 0.0 * phi);
+    volScalarField mAdjRhsNuTilda1("mAdjRhsNuTilda1", 0.0 * nuTilda);
+
+    volVectorField mAdjRhsU2("mAdjRhsU2", mAdjRhsU1);
+    volScalarField mAdjRhsP2("mAdjRhsP2", mAdjRhsP1);
+    surfaceScalarField mAdjRhsPhi2("mAdjRhsPhi2", mAdjRhsPhi1);
+    volScalarField mAdjRhsNuTilda2("mAdjRhsNuTilda2", mAdjRhsNuTilda1);
+
+    // Initialize all-zero adjoint residuals
+    volVectorField adjU1Res("adjU1Res", 0.0 * U);
+    volScalarField adjP1Res("adjP1Res", 0.0 * p);
+    surfaceScalarField adjPhi1Res("adjPhi1Res", 0.0 * phi);
+    volScalarField adjNuTilda1Res("adjNuTilda1Res", 0.0 * nuTilda);
+
+    volVectorField adjU2Res("adjU2Res", adjU1Res);
+    volScalarField adjP2Res("adjP2Res", adjP1Res);
+    surfaceScalarField adjPhi2Res("adjPhi2Res", adjPhi1Res);
+    volScalarField adjNuTilda2Res("adjNuTilda2Res", adjNuTilda1Res);
+
+    // Initialize all-zero adjoint vector
+    volVectorField U1Psi("U1Psi", 0.0 * U);
+    volScalarField p1Psi("p1Psi", 0.0 * p);
+    surfaceScalarField phi1Psi("phi1Psi", 0.0 * phi);
+    volScalarField nuTilda1Psi("nuTilda1Psi", 0.0 * nuTilda);
+
+    volVectorField U2Psi("U2Psi", U1Psi);
+    volScalarField p2Psi("p2Psi", p1Psi);
+    surfaceScalarField phi2Psi("phi2Psi", phi1Psi);
+    volScalarField nuTilda2Psi("nuTilda2Psi", nuTilda1Psi);
+
+    // Initialize the total gradient dFdX as zero
+    scalar dFdX = 0.0;
+    label dvPatchI = -100;
+    scalar X = 0.0;
+    dvPatchI = mesh.boundaryMesh().findPatchID("inout");
+    X = U.boundaryFieldRef()[dvPatchI][0][0];
+    Info << "X: " << X << endl;
+
+    // get the reverse-mode AD tape
+    //codi::RealReverse::Tape& tape = codi::RealReverse::getTape();
+
     Info << "End\n"
          << endl;
 
