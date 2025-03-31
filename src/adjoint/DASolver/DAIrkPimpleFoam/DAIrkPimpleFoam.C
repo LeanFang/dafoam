@@ -605,14 +605,65 @@ label DAIrkPimpleFoam::solvePrimal()
         runTime.printExecutionTime(Info);
     }
 
-    // ************************************************************************* //
-    // Adjoint starts here
+    Info << "End\n"
+         << endl;
+
+    return 0;
+}
+
+label DAIrkPimpleFoam::runFPAdj(
+    Vec dFdW,
+    Vec psi)
+{
+    // If adjoint converged, then adjConv = 0
+    // Otherwise, adjConv = 1
+    // Set adjConv always 0 for now
+    label adjConv = 0;
+
+#ifdef CODI_ADR
+
+    Info << "Solving the adjoint using non-dual fixed-point iteration method..."
+         << "  Execution Time: " << meshPtr_->time().elapsedCpuTime() << " s" << endl;
+    ;
+
+    // Get endTime, deltaT, and nTimeSteps
+    scalar endTime = meshPtr_->time().endTime().value();
+    scalar deltaT = meshPtr_->time().deltaTValue();
+    label nTimeSteps = std::round(endTime / deltaT);
+
+    // Set stepIndex and timeInstance as the last time step
+    label stepIndex = nTimeSteps;
+    scalar timeInstance = endTime;
+
+    const objectRegistry& db = meshPtr_->thisDb();
+
+    // Get nu and y which are viewed as constants
+    volScalarField& nu = const_cast<volScalarField&>(db.lookupObject<volScalarField>("nu"));
+    volScalarField& y = const_cast<volScalarField&>(db.lookupObject<volScalarField>("yWall"));
+
+    // Get field variables for old time step, only U and nuTilda are needed
+    volVectorField& U = const_cast<volVectorField&>(db.lookupObject<volVectorField>("U"));
+    volScalarField& nuTilda = const_cast<volScalarField&>(db.lookupObject<volScalarField>("nuTilda"));
+
+    // Get field variables for stage-1
+    volVectorField& U1 = const_cast<volVectorField&>(db.lookupObject<volVectorField>("U1"));
+    volScalarField& p1 = const_cast<volScalarField&>(db.lookupObject<volScalarField>("p1"));
+    surfaceScalarField& phi1 = const_cast<surfaceScalarField&>(db.lookupObject<surfaceScalarField>("phi1"));
+    volScalarField& nuTilda1 = const_cast<volScalarField&>(db.lookupObject<volScalarField>("nuTilda1"));
+    volScalarField& nut1 = const_cast<volScalarField&>(db.lookupObject<volScalarField>("nut1"));
+
+    // Get field variables for stage-2
+    volVectorField& U2 = const_cast<volVectorField&>(db.lookupObject<volVectorField>("U2"));
+    volScalarField& p2 = const_cast<volScalarField&>(db.lookupObject<volScalarField>("p2"));
+    surfaceScalarField& phi2 = const_cast<surfaceScalarField&>(db.lookupObject<surfaceScalarField>("phi2"));
+    volScalarField& nuTilda2 = const_cast<volScalarField&>(db.lookupObject<volScalarField>("nuTilda2"));
+    volScalarField& nut2 = const_cast<volScalarField&>(db.lookupObject<volScalarField>("nut2"));
 
     // Initialize all-zero adjoint equation rhs (reversed sign):
-    volVectorField mAdjRhsU1("mAdjRhsU1", 0.0 * U);
-    volScalarField mAdjRhsP1("mAdjRhsP1", 0.0 * p);
-    surfaceScalarField mAdjRhsPhi1("mAdjRhsPhi1", 0.0 * phi);
-    volScalarField mAdjRhsNuTilda1("mAdjRhsNuTilda1", 0.0 * nuTilda);
+    volVectorField mAdjRhsU1("mAdjRhsU1", 0.0 * U1);
+    volScalarField mAdjRhsP1("mAdjRhsP1", 0.0 * p1);
+    surfaceScalarField mAdjRhsPhi1("mAdjRhsPhi1", 0.0 * phi1);
+    volScalarField mAdjRhsNuTilda1("mAdjRhsNuTilda1", 0.0 * nuTilda1);
 
     volVectorField mAdjRhsU2("mAdjRhsU2", mAdjRhsU1);
     volScalarField mAdjRhsP2("mAdjRhsP2", mAdjRhsP1);
@@ -620,10 +671,10 @@ label DAIrkPimpleFoam::solvePrimal()
     volScalarField mAdjRhsNuTilda2("mAdjRhsNuTilda2", mAdjRhsNuTilda1);
 
     // Initialize all-zero adjoint residuals
-    volVectorField adjU1Res("adjU1Res", 0.0 * U);
-    volScalarField adjP1Res("adjP1Res", 0.0 * p);
-    surfaceScalarField adjPhi1Res("adjPhi1Res", 0.0 * phi);
-    volScalarField adjNuTilda1Res("adjNuTilda1Res", 0.0 * nuTilda);
+    volVectorField adjU1Res("adjU1Res", 0.0 * U1);
+    volScalarField adjP1Res("adjP1Res", 0.0 * p1);
+    surfaceScalarField adjPhi1Res("adjPhi1Res", 0.0 * phi1);
+    volScalarField adjNuTilda1Res("adjNuTilda1Res", 0.0 * nuTilda1);
 
     volVectorField adjU2Res("adjU2Res", adjU1Res);
     volScalarField adjP2Res("adjP2Res", adjP1Res);
@@ -631,10 +682,10 @@ label DAIrkPimpleFoam::solvePrimal()
     volScalarField adjNuTilda2Res("adjNuTilda2Res", adjNuTilda1Res);
 
     // Initialize all-zero adjoint vector
-    volVectorField U1Psi("U1Psi", 0.0 * U);
-    volScalarField p1Psi("p1Psi", 0.0 * p);
-    surfaceScalarField phi1Psi("phi1Psi", 0.0 * phi);
-    volScalarField nuTilda1Psi("nuTilda1Psi", 0.0 * nuTilda);
+    volVectorField U1Psi("U1Psi", 0.0 * U1);
+    volScalarField p1Psi("p1Psi", 0.0 * p1);
+    surfaceScalarField phi1Psi("phi1Psi", 0.0 * phi1);
+    volScalarField nuTilda1Psi("nuTilda1Psi", 0.0 * nuTilda1);
 
     volVectorField U2Psi("U2Psi", U1Psi);
     volScalarField p2Psi("p2Psi", p1Psi);
@@ -645,17 +696,24 @@ label DAIrkPimpleFoam::solvePrimal()
     scalar dFdX = 0.0;
     label dvPatchI = -100;
     scalar X = 0.0;
-    dvPatchI = mesh.boundaryMesh().findPatchID("inout");
+    dvPatchI = meshPtr_->boundaryMesh().findPatchID("inout");
     X = U.boundaryFieldRef()[dvPatchI][0][0];
     Info << "X: " << X << endl;
 
     // get the reverse-mode AD tape
-    //codi::RealReverse::Tape& tape = codi::RealReverse::getTape();
+    codi::RealReverse::Tape& tape = codi::RealReverse::getTape();
 
-    Info << "End\n"
-         << endl;
+    while (stepIndex > 0)
+    {
+        Info << "Reverse adjoint run for time step = " << stepIndex << endl;
 
-    return 0;
+        stepIndex--;
+        timeInstance -= deltaT;
+    }
+
+#endif
+
+    return adjConv;
 }
 
 } // End namespace Foam
