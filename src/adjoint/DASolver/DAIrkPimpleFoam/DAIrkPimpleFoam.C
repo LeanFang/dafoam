@@ -557,10 +557,6 @@ label DAIrkPimpleFoam::runFPAdj(
     scalar deltaT = runTime.deltaTValue();
     label nTimeSteps = std::round(endTime / deltaT);
 
-    Info << "endTime: " << endTime << endl;
-    Info << "deltaT: " << deltaT << endl;
-    Info << "nTimeSteps: " << nTimeSteps << endl;
-
     // Set stepIndex and timeInstance as the last time step
     label stepIndex = nTimeSteps;
     scalar timeInstance = endTime;
@@ -637,6 +633,9 @@ label DAIrkPimpleFoam::runFPAdj(
     while (stepIndex > 0)
     {
         Info << "Reverse adjoint run for time step = " << stepIndex << endl;
+
+        // Read states for RadaU23
+#include "readRadau23.H"
 
         stepIndex--;
         timeInstance -= deltaT;
