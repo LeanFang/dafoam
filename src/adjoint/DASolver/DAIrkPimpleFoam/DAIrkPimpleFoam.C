@@ -433,17 +433,20 @@ label DAIrkPimpleFoam::solvePrimal()
 #include "nuTilda2EqnIrkPimple.H"
             }
 
-            this->calcPriResIrkOrig(U, U1, p1, phi1, nuTilda1, nut1, U2, p2, phi2, nuTilda2, nut2, nu, deltaT, U1Res, p1Res, phi1Res, U2Res, p2Res, phi2Res, relaxUEqn);
-            this->calcPriSAResIrkOrig(nuTilda, U1, phi1, nuTilda1, U2, phi2, nuTilda2, y, nu, deltaT, nuTilda1Res, nuTilda2Res);
+            if (checkPriRes == "yes")
+            {
+                this->calcPriResIrkOrig(U, U1, p1, phi1, nuTilda1, nut1, U2, p2, phi2, nuTilda2, nut2, nu, deltaT, U1Res, p1Res, phi1Res, U2Res, p2Res, phi2Res, relaxUEqn);
+                this->calcPriSAResIrkOrig(nuTilda, U1, phi1, nuTilda1, U2, phi2, nuTilda2, y, nu, deltaT, nuTilda1Res, nuTilda2Res);
 
-            Info << "L2 norm of U1Res: " << this->L2norm(U1Res.primitiveField()) << endl;
-            Info << "L2 norm of U2Res: " << this->L2norm(U2Res.primitiveField()) << endl;
-            Info << "L2 norm of p1Res: " << this->L2norm(p1Res.primitiveField()) << endl;
-            Info << "L2 norm of p2Res: " << this->L2norm(p2Res.primitiveField()) << endl;
-            Info << "L2 norm of phi1Res: " << this->L2norm(phi1Res, phi1.mesh().magSf()) << endl;
-            Info << "L2 norm of phi2Res: " << this->L2norm(phi2Res, phi2.mesh().magSf()) << endl;
-            Info << "L2 norm of nuTilda1Res: " << this->L2norm(nuTilda1Res.primitiveField()) << endl;
-            Info << "L2 norm of nuTilda2Res: " << this->L2norm(nuTilda2Res.primitiveField()) << endl;
+                Info << "L2 norm of U1Res: " << this->L2norm(U1Res.primitiveField()) << endl;
+                Info << "L2 norm of U2Res: " << this->L2norm(U2Res.primitiveField()) << endl;
+                Info << "L2 norm of p1Res: " << this->L2norm(p1Res.primitiveField()) << endl;
+                Info << "L2 norm of p2Res: " << this->L2norm(p2Res.primitiveField()) << endl;
+                Info << "L2 norm of phi1Res: " << this->L2norm(phi1Res, phi1.mesh().magSf()) << endl;
+                Info << "L2 norm of phi2Res: " << this->L2norm(phi2Res, phi2.mesh().magSf()) << endl;
+                Info << "L2 norm of nuTilda1Res: " << this->L2norm(nuTilda1Res.primitiveField()) << endl;
+                Info << "L2 norm of nuTilda2Res: " << this->L2norm(nuTilda2Res.primitiveField()) << endl;
+            }
 
             sweepIndex++;
         }
@@ -600,17 +603,20 @@ label DAIrkPimpleFoam::runFPAdj(
         // Read states for RadaU23
 #include "readRadau23.H"
 
-        this->calcPriResIrkOrig(U, U1, p1, phi1, nuTilda1, nut1, U2, p2, phi2, nuTilda2, nut2, nu, deltaT, U1Res, p1Res, phi1Res, U2Res, p2Res, phi2Res, relaxUEqn);
-        this->calcPriSAResIrkOrig(nuTilda, U1, phi1, nuTilda1, U2, phi2, nuTilda2, y, nu, deltaT, nuTilda1Res, nuTilda2Res);
+        if (checkPriRes == "yes")
+        {
+            this->calcPriResIrkOrig(U, U1, p1, phi1, nuTilda1, nut1, U2, p2, phi2, nuTilda2, nut2, nu, deltaT, U1Res, p1Res, phi1Res, U2Res, p2Res, phi2Res, relaxUEqn);
+            this->calcPriSAResIrkOrig(nuTilda, U1, phi1, nuTilda1, U2, phi2, nuTilda2, y, nu, deltaT, nuTilda1Res, nuTilda2Res);
 
-        Info << "L2 norm of U1Res: " << this->L2norm(U1Res.primitiveField()) << endl;
-        Info << "L2 norm of U2Res: " << this->L2norm(U2Res.primitiveField()) << endl;
-        Info << "L2 norm of p1Res: " << this->L2norm(p1Res.primitiveField()) << endl;
-        Info << "L2 norm of p2Res: " << this->L2norm(p2Res.primitiveField()) << endl;
-        Info << "L2 norm of phi1Res: " << this->L2norm(phi1Res, phi1.mesh().magSf()) << endl;
-        Info << "L2 norm of phi2Res: " << this->L2norm(phi2Res, phi2.mesh().magSf()) << endl;
-        Info << "L2 norm of nuTilda1Res: " << this->L2norm(nuTilda1Res.primitiveField()) << endl;
-        Info << "L2 norm of nuTilda2Res: " << this->L2norm(nuTilda2Res.primitiveField()) << endl;
+            Info << "L2 norm of U1Res: " << this->L2norm(U1Res.primitiveField()) << endl;
+            Info << "L2 norm of U2Res: " << this->L2norm(U2Res.primitiveField()) << endl;
+            Info << "L2 norm of p1Res: " << this->L2norm(p1Res.primitiveField()) << endl;
+            Info << "L2 norm of p2Res: " << this->L2norm(p2Res.primitiveField()) << endl;
+            Info << "L2 norm of phi1Res: " << this->L2norm(phi1Res, phi1.mesh().magSf()) << endl;
+            Info << "L2 norm of phi2Res: " << this->L2norm(phi2Res, phi2.mesh().magSf()) << endl;
+            Info << "L2 norm of nuTilda1Res: " << this->L2norm(nuTilda1Res.primitiveField()) << endl;
+            Info << "L2 norm of nuTilda2Res: " << this->L2norm(nuTilda2Res.primitiveField()) << endl;
+        }
 
         stepIndex--;
         timeInstance -= deltaT;

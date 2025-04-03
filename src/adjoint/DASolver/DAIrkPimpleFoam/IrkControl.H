@@ -79,3 +79,18 @@ if (IRKDict.found("maxSweep"))
         maxSweep = IRKDict.getLabel("maxSweep");
     }
 }
+
+word checkPriRes = "yes";
+if (IRKDict.found("checkPriRes"))
+{
+    checkPriRes = IRKDict.getWord("checkPriRes");
+
+    Info << "If checking primal residual: " << checkPriRes << endl;
+
+    if (checkPriRes != "yes" && checkPriRes != "no")
+    {
+        Info << "checkPriRes not recognized, Using the default: yes" << endl
+             << "Options are: yes, no" << endl;
+        checkPriRes = "yes";
+    }
+}
