@@ -367,52 +367,8 @@ label DAIrkPimpleFoam::solvePrimal()
     mesh.setFluxRequired(p1.name());
     mesh.setFluxRequired(p2.name());
 
-    // Initialize primal residuals
-    volVectorField U1Res(
-        IOobject(
-            "U1Res",
-            runTime.timeName(),
-            mesh,
-            IOobject::NO_READ,
-            IOobject::NO_WRITE),
-        mesh,
-        dimensionedVector("U1Res", dimensionSet(0, 1, -2, 0, 0, 0, 0), vector::zero),
-        zeroGradientFvPatchField<vector>::typeName);
-    volVectorField U2Res("U2Res", U1Res);
-
-    volScalarField p1Res(
-        IOobject(
-            "p1Res",
-            runTime.timeName(),
-            mesh,
-            IOobject::NO_READ,
-            IOobject::NO_WRITE),
-        mesh,
-        dimensionedScalar("p1Res", dimensionSet(0, 0, -1, 0, 0, 0, 0), 0.0),
-        zeroGradientFvPatchField<scalar>::typeName);
-    volScalarField p2Res("p2Res", p1Res);
-
-    surfaceScalarField phi1Res(
-        IOobject(
-            "phi1Res",
-            runTime.timeName(),
-            mesh,
-            IOobject::NO_READ,
-            IOobject::NO_WRITE),
-        phi * 0.0);
-    surfaceScalarField phi2Res("phi2Res", phi1Res);
-
-    volScalarField nuTilda1Res(
-        IOobject(
-            "nuTilda1Res",
-            runTime.timeName(),
-            mesh,
-            IOobject::NO_READ,
-            IOobject::NO_WRITE),
-        mesh,
-        dimensionedScalar("nuTilda1Res", dimensionSet(0, 2, -2, 0, 0, 0, 0), 0.0),
-        zeroGradientFvPatchField<scalar>::typeName);
-    volScalarField nuTilda2Res("nuTilda2Res", nuTilda1Res);
+// Initialize primal residuals
+#include "initPriRes.H"
 
     // Initialize oldTime() for under-relaxation
     U1.oldTime() = U1;
@@ -586,6 +542,13 @@ label DAIrkPimpleFoam::runFPAdj(
     volScalarField nut1("nut1", nut);
     volScalarField nut2("nut2", nut);
 
+    // Settings for stage pressure
+    mesh.setFluxRequired(p1.name());
+    mesh.setFluxRequired(p2.name());
+
+    // Initialize primal residuals
+#include "initPriRes.H"
+
     // Initialize all-zero adjoint equation rhs (reversed sign):
     volVectorField mAdjRhsU1("mAdjRhsU1", 0.0 * U);
     volScalarField mAdjRhsP1("mAdjRhsP1", 0.0 * p);
@@ -636,6 +599,18 @@ label DAIrkPimpleFoam::runFPAdj(
 
         // Read states for RadaU23
 #include "readRadau23.H"
+
+        this->calcPriResIrkOrig(U, U1, p1, phi1, nuTilda1, nut1, U2, p2, phi2, nuTilda2, nut2, nu, deltaT, U1Res, p1Res, phi1Res, U2Res, p2Res, phi2Res, relaxUEqn);
+        this->calcPriSAResIrkOrig(nuTilda, U1, phi1, nuTilda1, U2, phi2, nuTilda2, y, nu, deltaT, nuTilda1Res, nuTilda2Res);
+
+        Info << "L2 norm of U1Res: " << this->L2norm(U1Res.primitiveField()) << endl;
+        Info << "L2 norm of U2Res: " << this->L2norm(U2Res.primitiveField()) << endl;
+        Info << "L2 norm of p1Res: " << this->L2norm(p1Res.primitiveField()) << endl;
+        Info << "L2 norm of p2Res: " << this->L2norm(p2Res.primitiveField()) << endl;
+        Info << "L2 norm of phi1Res: " << this->L2norm(phi1Res, phi1.mesh().magSf()) << endl;
+        Info << "L2 norm of phi2Res: " << this->L2norm(phi2Res, phi2.mesh().magSf()) << endl;
+        Info << "L2 norm of nuTilda1Res: " << this->L2norm(nuTilda1Res.primitiveField()) << endl;
+        Info << "L2 norm of nuTilda2Res: " << this->L2norm(nuTilda2Res.primitiveField()) << endl;
 
         stepIndex--;
         timeInstance -= deltaT;
