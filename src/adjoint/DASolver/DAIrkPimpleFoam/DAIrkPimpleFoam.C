@@ -326,6 +326,7 @@ label DAIrkPimpleFoam::solvePrimal()
     */
 
     Foam::argList& args = argsPtr_();
+
 #include "createTime.H"
 #include "createMesh.H"
 #include "initContinuityErrs.H"
@@ -347,87 +348,7 @@ label DAIrkPimpleFoam::solvePrimal()
     Info << "\nStarting time loop\n"
          << endl;
 
-    // get IRKDict settings, default to Radau23 for now
-    IOdictionary IRKDict(
-        IOobject(
-            "IRKDict",
-            mesh.time().system(),
-            mesh,
-            IOobject::READ_IF_PRESENT,
-            IOobject::NO_WRITE));
-
-    scalar relaxU = 1.0;
-    if (IRKDict.found("relaxU"))
-    {
-        if (IRKDict.getScalar("relaxU") > 0)
-        {
-            relaxU = IRKDict.getScalar("relaxU");
-        }
-    }
-
-    scalar relaxP = 1.0;
-    if (IRKDict.found("relaxP"))
-    {
-        if (IRKDict.getScalar("relaxP") > 0)
-        {
-            relaxP = IRKDict.getScalar("relaxP");
-        }
-    }
-
-    scalar relaxPhi = 1.0;
-    if (IRKDict.found("relaxPhi"))
-    {
-        if (IRKDict.getScalar("relaxPhi") > 0)
-        {
-            relaxPhi = IRKDict.getScalar("relaxPhi");
-        }
-    }
-
-    scalar relaxNuTilda = 1.0;
-    if (IRKDict.found("relaxNuTilda"))
-    {
-        if (IRKDict.getScalar("relaxNuTilda") > 0)
-        {
-            relaxNuTilda = IRKDict.getScalar("relaxNuTilda");
-        }
-    }
-
-    scalar relaxStage1 = 0.8;
-    if (IRKDict.found("relaxStage1"))
-    {
-        if (IRKDict.getScalar("relaxStage1") > 0)
-        {
-            relaxStage1 = IRKDict.getScalar("relaxStage1");
-        }
-    }
-
-    scalar relaxStage2 = 0.8;
-    if (IRKDict.found("relaxStage2"))
-    {
-        if (IRKDict.getScalar("relaxStage2") > 0)
-        {
-            relaxStage2 = IRKDict.getScalar("relaxStage2");
-        }
-    }
-
-    scalar relaxUEqn = 1.0;
-    scalar relaxNuTildaEqn = 1.0;
-    if (IRKDict.found("relaxNuTildaEqn"))
-    {
-        if (IRKDict.getScalar("relaxNuTildaEqn") > 0)
-        {
-            relaxNuTildaEqn = IRKDict.getScalar("relaxNuTildaEqn");
-        }
-    }
-
-    label maxSweep = 10;
-    if (IRKDict.found("maxSweep"))
-    {
-        if (IRKDict.getLabel("maxSweep") > 0)
-        {
-            maxSweep = IRKDict.getLabel("maxSweep");
-        }
-    }
+#include "IrkControl.H"
 
     // Duplicate state variables for stages
     volVectorField U1("U1", U);
@@ -626,44 +547,54 @@ label DAIrkPimpleFoam::runFPAdj(
          << "  Execution Time: " << meshPtr_->time().elapsedCpuTime() << " s" << endl;
     ;
 
+    fvMesh& mesh = meshPtr_();
+    const Time& runTime = runTimePtr_;
+
     // Get endTime, deltaT, and nTimeSteps
-    scalar endTime = meshPtr_->time().endTime().value();
-    scalar deltaT = meshPtr_->time().deltaTValue();
+    //scalar endTime = meshPtr_->time().endTime().value();
+    //scalar deltaT = meshPtr_->time().deltaTValue();
+    scalar endTime = runTime.endTime().value();
+    scalar deltaT = runTime.deltaTValue();
     label nTimeSteps = std::round(endTime / deltaT);
+
+    Info << "endTime: " << endTime << endl;
+    Info << "deltaT: " << deltaT << endl;
+    Info << "nTimeSteps: " << nTimeSteps << endl;
 
     // Set stepIndex and timeInstance as the last time step
     label stepIndex = nTimeSteps;
     scalar timeInstance = endTime;
 
+#include "createControl.H"
+#include "createFieldsIrkPimple.H"
+#include "IrkControl.H"
+
     const objectRegistry& db = meshPtr_->thisDb();
 
-    // Get nu and y which are viewed as constants
-    volScalarField& nu = const_cast<volScalarField&>(db.lookupObject<volScalarField>("nu"));
-    volScalarField& y = const_cast<volScalarField&>(db.lookupObject<volScalarField>("yWall"));
+    // Get nu, nut, nuTilda, y
+    volScalarField& nu = const_cast<volScalarField&>(mesh.thisDb().lookupObject<volScalarField>("nu"));
+    volScalarField& nut = const_cast<volScalarField&>(mesh.thisDb().lookupObject<volScalarField>("nut"));
+    volScalarField& nuTilda = const_cast<volScalarField&>(mesh.thisDb().lookupObject<volScalarField>("nuTilda"));
+    volScalarField& y = const_cast<volScalarField&>(mesh.thisDb().lookupObject<volScalarField>("yWall"));
 
-    // Get field variables for old time step, only U and nuTilda are needed
-    volVectorField& U = const_cast<volVectorField&>(db.lookupObject<volVectorField>("U"));
-    volScalarField& nuTilda = const_cast<volScalarField&>(db.lookupObject<volScalarField>("nuTilda"));
-
-    // Get field variables for stage-1
-    volVectorField& U1 = const_cast<volVectorField&>(db.lookupObject<volVectorField>("U1"));
-    volScalarField& p1 = const_cast<volScalarField&>(db.lookupObject<volScalarField>("p1"));
-    surfaceScalarField& phi1 = const_cast<surfaceScalarField&>(db.lookupObject<surfaceScalarField>("phi1"));
-    volScalarField& nuTilda1 = const_cast<volScalarField&>(db.lookupObject<volScalarField>("nuTilda1"));
-    volScalarField& nut1 = const_cast<volScalarField&>(db.lookupObject<volScalarField>("nut1"));
-
-    // Get field variables for stage-2
-    volVectorField& U2 = const_cast<volVectorField&>(db.lookupObject<volVectorField>("U2"));
-    volScalarField& p2 = const_cast<volScalarField&>(db.lookupObject<volScalarField>("p2"));
-    surfaceScalarField& phi2 = const_cast<surfaceScalarField&>(db.lookupObject<surfaceScalarField>("phi2"));
-    volScalarField& nuTilda2 = const_cast<volScalarField&>(db.lookupObject<volScalarField>("nuTilda2"));
-    volScalarField& nut2 = const_cast<volScalarField&>(db.lookupObject<volScalarField>("nut2"));
+    // Duplicate state variables for stages
+    volVectorField U1("U1", U);
+    volVectorField U2("U2", U);
+    volScalarField p1("p1", p);
+    volScalarField p2("p2", p);
+    surfaceScalarField phi1("phi1", phi);
+    surfaceScalarField phi2("phi2", phi);
+    // SA turbulence model
+    volScalarField nuTilda1("nuTilda1", nuTilda);
+    volScalarField nuTilda2("nuTilda2", nuTilda);
+    volScalarField nut1("nut1", nut);
+    volScalarField nut2("nut2", nut);
 
     // Initialize all-zero adjoint equation rhs (reversed sign):
-    volVectorField mAdjRhsU1("mAdjRhsU1", 0.0 * U1);
-    volScalarField mAdjRhsP1("mAdjRhsP1", 0.0 * p1);
-    surfaceScalarField mAdjRhsPhi1("mAdjRhsPhi1", 0.0 * phi1);
-    volScalarField mAdjRhsNuTilda1("mAdjRhsNuTilda1", 0.0 * nuTilda1);
+    volVectorField mAdjRhsU1("mAdjRhsU1", 0.0 * U);
+    volScalarField mAdjRhsP1("mAdjRhsP1", 0.0 * p);
+    surfaceScalarField mAdjRhsPhi1("mAdjRhsPhi1", 0.0 * phi);
+    volScalarField mAdjRhsNuTilda1("mAdjRhsNuTilda1", 0.0 * nuTilda);
 
     volVectorField mAdjRhsU2("mAdjRhsU2", mAdjRhsU1);
     volScalarField mAdjRhsP2("mAdjRhsP2", mAdjRhsP1);
@@ -671,10 +602,10 @@ label DAIrkPimpleFoam::runFPAdj(
     volScalarField mAdjRhsNuTilda2("mAdjRhsNuTilda2", mAdjRhsNuTilda1);
 
     // Initialize all-zero adjoint residuals
-    volVectorField adjU1Res("adjU1Res", 0.0 * U1);
-    volScalarField adjP1Res("adjP1Res", 0.0 * p1);
-    surfaceScalarField adjPhi1Res("adjPhi1Res", 0.0 * phi1);
-    volScalarField adjNuTilda1Res("adjNuTilda1Res", 0.0 * nuTilda1);
+    volVectorField adjU1Res("adjU1Res", 0.0 * U);
+    volScalarField adjP1Res("adjP1Res", 0.0 * p);
+    surfaceScalarField adjPhi1Res("adjPhi1Res", 0.0 * phi);
+    volScalarField adjNuTilda1Res("adjNuTilda1Res", 0.0 * nuTilda);
 
     volVectorField adjU2Res("adjU2Res", adjU1Res);
     volScalarField adjP2Res("adjP2Res", adjP1Res);
@@ -682,10 +613,10 @@ label DAIrkPimpleFoam::runFPAdj(
     volScalarField adjNuTilda2Res("adjNuTilda2Res", adjNuTilda1Res);
 
     // Initialize all-zero adjoint vector
-    volVectorField U1Psi("U1Psi", 0.0 * U1);
-    volScalarField p1Psi("p1Psi", 0.0 * p1);
-    surfaceScalarField phi1Psi("phi1Psi", 0.0 * phi1);
-    volScalarField nuTilda1Psi("nuTilda1Psi", 0.0 * nuTilda1);
+    volVectorField U1Psi("U1Psi", 0.0 * U);
+    volScalarField p1Psi("p1Psi", 0.0 * p);
+    surfaceScalarField phi1Psi("phi1Psi", 0.0 * phi);
+    volScalarField nuTilda1Psi("nuTilda1Psi", 0.0 * nuTilda);
 
     volVectorField U2Psi("U2Psi", U1Psi);
     volScalarField p2Psi("p2Psi", p1Psi);
