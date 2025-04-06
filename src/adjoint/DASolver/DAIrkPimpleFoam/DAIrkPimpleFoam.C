@@ -306,6 +306,70 @@ void DAIrkPimpleFoam::calcPriSAResIrkOrig(
     }
 }
 
+// For FP adjoint, we need primal residual scaled with mesh volumes
+// phiRes is already scaled with surface areas
+void DAIrkPimpleFoam::scaledPriResIrk(
+    volVectorField& U0, // oldTime U
+    volScalarField& nuTilda0, // oldTime nuTilda
+    volVectorField& U1, // 1st stage
+    volScalarField& p1,
+    surfaceScalarField& phi1,
+    volScalarField& nuTilda1,
+    volScalarField& nut1,
+    volVectorField& U2, // 2nd stage
+    volScalarField& p2,
+    surfaceScalarField& phi2,
+    volScalarField& nuTilda2,
+    volScalarField& nut2,
+    volScalarField& y,
+    const volScalarField& nu,
+    const scalar& deltaT, // current dt
+    volVectorField& U1Res, // Residual for 1st stage
+    volScalarField& p1Res,
+    surfaceScalarField& phi1Res,
+    volScalarField& nuTilda1Res,
+    volVectorField& U2Res, // Residual for end stage
+    volScalarField& p2Res,
+    surfaceScalarField& phi2Res,
+    volScalarField& nuTilda2Res,
+    const scalar& relaxUEqn)
+{
+    this->calcPriResIrkOrig(U0, U1, p1, phi1, nuTilda1, nut1, U2, p2, phi2, nuTilda2, nut2, nu, deltaT, U1Res, p1Res, phi1Res, U2Res, p2Res, phi2Res, relaxUEqn);
+    this->calcPriSAResIrkOrig(nuTilda0, U1, phi1, nuTilda1, U2, phi2, nuTilda2, y, nu, deltaT, nuTilda1Res, nuTilda2Res);
+
+    forAll(U1Res, cellI)
+    {
+        scalar meshV = U1.mesh().V()[cellI];
+        U1Res[cellI] = U1Res[cellI] * meshV;
+    }
+    forAll(p1Res, cellI)
+    {
+        scalar meshV = p1.mesh().V()[cellI];
+        p1Res[cellI] = p1Res[cellI] * meshV;
+    }
+    forAll(nuTilda1Res, cellI)
+    {
+        scalar meshV = nuTilda1.mesh().V()[cellI];
+        nuTilda1Res[cellI] = nuTilda1Res[cellI] * meshV;
+    }
+
+    forAll(U2Res, cellI)
+    {
+        scalar meshV = U2.mesh().V()[cellI];
+        U2Res[cellI] = U2Res[cellI] * meshV;
+    }
+    forAll(p2Res, cellI)
+    {
+        scalar meshV = p2.mesh().V()[cellI];
+        p2Res[cellI] = p2Res[cellI] * meshV;
+    }
+    forAll(nuTilda2Res, cellI)
+    {
+        scalar meshV = nuTilda2.mesh().V()[cellI];
+        nuTilda2Res[cellI] = nuTilda2Res[cellI] * meshV;
+    }
+}
+
 void DAIrkPimpleFoam::initSolver()
 {
     /*
@@ -435,8 +499,10 @@ label DAIrkPimpleFoam::solvePrimal()
 
             if (checkPriRes == "yes")
             {
-                this->calcPriResIrkOrig(U, U1, p1, phi1, nuTilda1, nut1, U2, p2, phi2, nuTilda2, nut2, nu, deltaT, U1Res, p1Res, phi1Res, U2Res, p2Res, phi2Res, relaxUEqn);
-                this->calcPriSAResIrkOrig(nuTilda, U1, phi1, nuTilda1, U2, phi2, nuTilda2, y, nu, deltaT, nuTilda1Res, nuTilda2Res);
+                //this->calcPriResIrkOrig(U, U1, p1, phi1, nuTilda1, nut1, U2, p2, phi2, nuTilda2, nut2, nu, deltaT, U1Res, p1Res, phi1Res, U2Res, p2Res, phi2Res, relaxUEqn);
+                //this->calcPriSAResIrkOrig(nuTilda, U1, phi1, nuTilda1, U2, phi2, nuTilda2, y, nu, deltaT, nuTilda1Res, nuTilda2Res);
+
+                this->scaledPriResIrk(U, nuTilda, U1, p1, phi1, nuTilda1, nut1, U2, p2, phi2, nuTilda2, nut2, y, nu, deltaT, U1Res, p1Res, phi1Res, nuTilda1Res, U2Res, p2Res, phi2Res, nuTilda2Res, relaxUEqn);
 
                 Info << "L2 norm of U1Res: " << this->L2norm(U1Res.primitiveField()) << endl;
                 Info << "L2 norm of U2Res: " << this->L2norm(U2Res.primitiveField()) << endl;

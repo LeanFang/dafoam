@@ -142,6 +142,34 @@ protected:
         volScalarField& nuTilda1Res, // Residual for 1st stage
         volScalarField& nuTilda2Res); // Residual for 2nd stage
 
+    // For FP adjoint, we need primal residual scaled with mesh volumes
+    // phiRes is already scaled with surface areas
+    void scaledPriResIrk(
+        volVectorField& U0, // oldTime U
+        volScalarField& nuTilda0, // oldTime nuTilda
+        volVectorField& U1, // 1st stage
+        volScalarField& p1,
+        surfaceScalarField& phi1,
+        volScalarField& nuTilda1,
+        volScalarField& nut1,
+        volVectorField& U2, // 2nd stage
+        volScalarField& p2,
+        surfaceScalarField& phi2,
+        volScalarField& nuTilda2,
+        volScalarField& nut2,
+        volScalarField& y,
+        const volScalarField& nu,
+        const scalar& deltaT, // current dt
+        volVectorField& U1Res, // Residual for 1st stage
+        volScalarField& p1Res,
+        surfaceScalarField& phi1Res,
+        volScalarField& nuTilda1Res,
+        volVectorField& U2Res, // Residual for end stage
+        volScalarField& p2Res,
+        surfaceScalarField& phi2Res,
+        volScalarField& nuTilda2Res,
+        const scalar& relaxUEqn);
+
     // Some utilities, move to DAUtility later
 
     // Swapping two arrays, used for pseudoEqns
