@@ -499,10 +499,10 @@ label DAIrkPimpleFoam::solvePrimal()
 
             if (checkPriRes == "yes")
             {
-                //this->calcPriResIrkOrig(U, U1, p1, phi1, nuTilda1, nut1, U2, p2, phi2, nuTilda2, nut2, nu, deltaT, U1Res, p1Res, phi1Res, U2Res, p2Res, phi2Res, relaxUEqn);
-                //this->calcPriSAResIrkOrig(nuTilda, U1, phi1, nuTilda1, U2, phi2, nuTilda2, y, nu, deltaT, nuTilda1Res, nuTilda2Res);
+                this->calcPriResIrkOrig(U, U1, p1, phi1, nuTilda1, nut1, U2, p2, phi2, nuTilda2, nut2, nu, deltaT, U1Res, p1Res, phi1Res, U2Res, p2Res, phi2Res, relaxUEqn);
+                this->calcPriSAResIrkOrig(nuTilda, U1, phi1, nuTilda1, U2, phi2, nuTilda2, y, nu, deltaT, nuTilda1Res, nuTilda2Res);
 
-                this->scaledPriResIrk(U, nuTilda, U1, p1, phi1, nuTilda1, nut1, U2, p2, phi2, nuTilda2, nut2, y, nu, deltaT, U1Res, p1Res, phi1Res, nuTilda1Res, U2Res, p2Res, phi2Res, nuTilda2Res, relaxUEqn);
+                //this->scaledPriResIrk(U, nuTilda, U1, p1, phi1, nuTilda1, nut1, U2, p2, phi2, nuTilda2, nut2, y, nu, deltaT, U1Res, p1Res, phi1Res, nuTilda1Res, U2Res, p2Res, phi2Res, nuTilda2Res, relaxUEqn);
 
                 Info << "L2 norm of U1Res: " << this->L2norm(U1Res.primitiveField()) << endl;
                 Info << "L2 norm of U2Res: " << this->L2norm(U2Res.primitiveField()) << endl;
@@ -655,7 +655,8 @@ label DAIrkPimpleFoam::runFPAdj(
     scalar dFdX = 0.0;
     label dvPatchI = -100;
     scalar X = 0.0;
-    dvPatchI = meshPtr_->boundaryMesh().findPatchID("inout");
+    // Note: "inlet" only works for certain cases
+    dvPatchI = meshPtr_->boundaryMesh().findPatchID("inlet");
     X = U.boundaryFieldRef()[dvPatchI][0][0];
     Info << "X: " << X << endl;
 
