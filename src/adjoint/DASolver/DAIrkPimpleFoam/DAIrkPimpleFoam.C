@@ -234,13 +234,13 @@ void DAIrkPimpleFoam::calcPriSAResIrkOrig(
     // --- 1st stage
     {
         // Get chi1 and fv11
-        volScalarField chi1("chi1", chi(nuTilda1, nu));
-        volScalarField fv11("fv11", fv1(chi1));
+        volScalarField chi1("chi1", this->chi(nuTilda1, nu));
+        volScalarField fv11("fv11", this->fv1(chi1));
 
         // Get Stilda1
         volScalarField Stilda1(
             "Stilda1",
-            fv3(chi1, fv11) * ::sqrt(2.0) * mag(skew(fvc::grad(U1))) + fv2(chi1, fv11) * nuTilda1 / sqr(kappa * y));
+            this->fv3(chi1, fv11) * ::sqrt(2.0) * mag(skew(fvc::grad(U1))) + this->fv2(chi1, fv11) * nuTilda1 / sqr(kappa * y));
 
         // Construct nuTilda1Eqn w/o ddt term
         fvScalarMatrix nuTilda1Eqn(
@@ -248,7 +248,7 @@ void DAIrkPimpleFoam::calcPriSAResIrkOrig(
                 - fvm::laplacian(DnuTildaEff(nuTilda1, nu), nuTilda1)
                 - Cb2 / sigmaNut * magSqr(fvc::grad(nuTilda1))
             == Cb1 * Stilda1 * nuTilda1 // If field inversion, beta should be multiplied here
-                - fvm::Sp(Cw1 * fw(Stilda1, nuTilda1, y) * nuTilda1 / sqr(y), nuTilda1));
+                - fvm::Sp(Cw1 * this->fw(Stilda1, nuTilda1, y) * nuTilda1 / sqr(y), nuTilda1));
 
         // Update nuTilda1Eqn with pseudo-spectral terms
         forAll(nuTilda1, cellI)
@@ -271,13 +271,13 @@ void DAIrkPimpleFoam::calcPriSAResIrkOrig(
     // --- 2nd stage
     {
         // Get chi2 and fv12
-        volScalarField chi2("chi2", chi(nuTilda2, nu));
-        volScalarField fv12("fv12", fv1(chi2));
+        volScalarField chi2("chi2", this->chi(nuTilda2, nu));
+        volScalarField fv12("fv12", this->fv1(chi2));
 
         // Get Stilda2
         volScalarField Stilda2(
             "Stilda2",
-            fv3(chi2, fv12) * ::sqrt(2.0) * mag(skew(fvc::grad(U2))) + fv2(chi2, fv12) * nuTilda2 / sqr(kappa * y));
+            this->fv3(chi2, fv12) * ::sqrt(2.0) * mag(skew(fvc::grad(U2))) + this->fv2(chi2, fv12) * nuTilda2 / sqr(kappa * y));
 
         // Construct nuTilda2Eqn w/o ddt term
         fvScalarMatrix nuTilda2Eqn(
@@ -285,7 +285,7 @@ void DAIrkPimpleFoam::calcPriSAResIrkOrig(
                 - fvm::laplacian(DnuTildaEff(nuTilda2, nu), nuTilda2)
                 - Cb2 / sigmaNut * magSqr(fvc::grad(nuTilda2))
             == Cb1 * Stilda2 * nuTilda2 // If field inversion, beta should be multiplied here
-                - fvm::Sp(Cw1 * fw(Stilda2, nuTilda2, y) * nuTilda2 / sqr(y), nuTilda2));
+                - fvm::Sp(Cw1 * this->fw(Stilda2, nuTilda2, y) * nuTilda2 / sqr(y), nuTilda2));
 
         // Update nuTilda2Eqn with pseudo-spectral terms
         forAll(nuTilda2, cellI)
@@ -619,14 +619,17 @@ label DAIrkPimpleFoam::runFPAdj(
 
     Info << "Solving the adjoint using non-dual fixed-point iteration method..."
          << "  Execution Time: " << meshPtr_->time().elapsedCpuTime() << " s" << endl;
-    ;
+
+    // Numerical settings
+    word divUScheme = "div(phi,U)";
+    word divGradUScheme = "div((nuEff*dev2(T(grad(U)))))";
+    word divNuTildaScheme = "div(phi,nuTilda)";
 
     fvMesh& mesh = meshPtr_();
     const Time& runTime = runTimePtr_;
 
     // Get endTime, deltaT, and nTimeSteps
-    //scalar endTime = meshPtr_->time().endTime().value();
-    //scalar deltaT = meshPtr_->time().deltaTValue();
+    // Note that here we assume uniform deltaT, but deltaT can be non-uniform
     scalar endTime = runTime.endTime().value();
     scalar deltaT = runTime.deltaTValue();
     label nTimeSteps = std::round(endTime / deltaT);
@@ -716,7 +719,7 @@ label DAIrkPimpleFoam::runFPAdj(
     {
         Info << "Reverse adjoint run for time step = " << stepIndex << endl;
 
-        // Read states for RadaU23
+        // Read states for Radau23
 #include "readRadau23.H"
 
         if (checkPriRes == "yes")
@@ -733,6 +736,24 @@ label DAIrkPimpleFoam::runFPAdj(
             Info << "L2 norm of nuTilda1Res: " << this->L2norm(nuTilda1Res.primitiveField()) << endl;
             Info << "L2 norm of nuTilda2Res: " << this->L2norm(nuTilda2Res.primitiveField()) << endl;
         }
+
+        // Initialize function of interest as zero
+        // They are the obj func at the two stages
+        scalar funcOfInte1 = 0.0;
+        scalar funcOfInte2 = 0.0;
+
+        // The scaling factor below is for the time avg type
+        scalar objFuncScale = deltaT / endTime;
+
+        // Get the scaling factors for both stages
+        scalar objFuncScaleStage1 = objFuncScale * w1;
+        scalar objFuncScaleStage2 = objFuncScale * w2;
+
+        // * * * * * * * * * * * * * * * * * * //
+        // Solve with non-dual adjoint
+
+        // Setup the pseudoEqns for both stages
+#include "pseudoEqns.H"
 
         stepIndex--;
         timeInstance -= deltaT;

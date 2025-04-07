@@ -1,11 +1,11 @@
 // Get chi2 and fv12
-volScalarField chi2("chi2", chi(nuTilda2, nu));
-volScalarField fv12("fv12", fv1(chi2));
+volScalarField chi2("chi2", this->chi(nuTilda2, nu));
+volScalarField fv12("fv12", this->fv1(chi2));
 
 // Get Stilda2
 volScalarField Stilda2(
     "Stilda2",
-    fv3(chi2, fv12) * ::sqrt(2.0) * mag(skew(fvc::grad(U2))) + fv2(chi2, fv12) * nuTilda2 / sqr(kappa * y));
+    this->fv3(chi2, fv12) * ::sqrt(2.0) * mag(skew(fvc::grad(U2))) + this->fv2(chi2, fv12) * nuTilda2 / sqr(kappa * y));
 
 // Construct nuTilda2Eqn w/o ddt term
 fvScalarMatrix nuTilda2Eqn(
@@ -13,7 +13,7 @@ fvScalarMatrix nuTilda2Eqn(
         - fvm::laplacian(DnuTildaEff(nuTilda2, nu), nuTilda2)
         - Cb2 / sigmaNut * magSqr(fvc::grad(nuTilda2))
     == Cb1 * Stilda2 * nuTilda2 // If field inversion, beta should be multiplied here
-        - fvm::Sp(Cw1 * fw(Stilda2, nuTilda2, y) * nuTilda2 / sqr(y), nuTilda2));
+        - fvm::Sp(Cw1 * this->fw(Stilda2, nuTilda2, y) * nuTilda2 / sqr(y), nuTilda2));
 
 // Update nuTilda2Eqn with pseudo-spectral terms
 forAll(nuTilda2, cellI)
