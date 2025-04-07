@@ -170,6 +170,9 @@ protected:
         volScalarField& nuTilda2Res,
         const scalar& relaxUEqn);
 
+    // We use meanU as the test objective function
+    scalar calcMeanU(volVectorField& U);
+
     // Some utilities, move to DAUtility later
 
     // Swapping two arrays, used for pseudoEqns

@@ -370,6 +370,21 @@ void DAIrkPimpleFoam::scaledPriResIrk(
     }
 }
 
+// We use meanU as the test objective function
+scalar DAIrkPimpleFoam::calcMeanU(volVectorField& U)
+{
+    scalar meanU = 0.0;
+    forAll(U, cellI)
+    {
+        for (label i = 0; i < 3; i++)
+        {
+            meanU += U[cellI][i];
+        }
+    }
+    meanU /= U.size() * 3;
+    return meanU;
+}
+
 void DAIrkPimpleFoam::initSolver()
 {
     /*
@@ -454,6 +469,11 @@ label DAIrkPimpleFoam::solvePrimal()
     dictionary solverDictP = myFvSolution.subDict("solvers").subDict("p");
     dictionary solverDictNuTilda = myFvSolution.subDict("solvers").subDict("nuTilda");
 
+    scalar endTime = runTime.endTime().value();
+
+    // Initialize the obj timeAvgMeanU
+    scalar timeAvgMeanU = 0.0;
+
     while (runTime.run())
     {
 
@@ -537,6 +557,17 @@ label DAIrkPimpleFoam::solvePrimal()
         nuTilda1.write();
         nut1.write();
 
+        // Calculate local obj: meanT1 and meanT2
+        scalar meanU1 = calcMeanU(U1);
+        scalar meanU2 = calcMeanU(U2);
+
+        Info << "Local obj meanU1: " << meanU1 << endl;
+        Info << "Local obj meanU2: " << meanU2 << endl;
+
+        // Add to global obj
+        timeAvgMeanU += meanU1 * w1 * deltaT / endTime;
+        timeAvgMeanU += meanU2 * w2 * deltaT / endTime;
+
         // Use old step as initial guess for the next step
         U1 = U;
         U1.correctBoundaryConditions();
@@ -550,6 +581,8 @@ label DAIrkPimpleFoam::solvePrimal()
 
         runTime.printExecutionTime(Info);
     }
+
+    Info << "Global obj timeAvgMeanU: " << timeAvgMeanU << endl;
 
     Info << "End\n"
          << endl;
