@@ -94,3 +94,18 @@ if (IRKDict.found("checkPriRes"))
         checkPriRes = "yes";
     }
 }
+
+word checkURef = "no";
+if (IRKDict.found("checkURef"))
+{
+    checkURef = IRKDict.getWord("checkURef");
+
+    Info << "If checking U referenct at endTime: " << checkURef << endl;
+
+    if (checkURef != "yes" && checkURef != "no")
+    {
+        Info << "checkURef not recognized, Using the default: no" << endl
+             << "Options are: yes, no" << endl;
+        checkURef = "no";
+    }
+}

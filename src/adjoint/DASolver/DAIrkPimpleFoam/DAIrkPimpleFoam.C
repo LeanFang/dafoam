@@ -584,6 +584,22 @@ label DAIrkPimpleFoam::solvePrimal()
 
     Info << "Global obj timeAvgMeanU: " << timeAvgMeanU << endl;
 
+    if (checkURef == "yes")
+    {
+        volVectorField readURef(
+            IOobject(
+                "URef",
+                Foam::name(endTime),
+                mesh,
+                IOobject::MUST_READ,
+                IOobject::NO_WRITE),
+            mesh);
+
+        volVectorField endPtErr("endPtErr", U - readURef);
+        Info << "Infinity norm of endPtErr normalized by 1.0:" << this->getMaxAbs(endPtErr) / 1.0 << endl;
+        Info << "L2 norm of endPtErr normalized by 1.0:" << this->L2norm(endPtErr) / std::sqrt(U.size()) / 1.0 << endl;
+    }
+
     Info << "End\n"
          << endl;
 
