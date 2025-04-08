@@ -620,13 +620,18 @@ label DAIrkPimpleFoam::runFPAdj(
     Info << "Solving the adjoint using non-dual fixed-point iteration method..."
          << "  Execution Time: " << meshPtr_->time().elapsedCpuTime() << " s" << endl;
 
+    fvMesh& mesh = meshPtr_();
+    const Time& runTime = runTimePtr_;
+
     // Numerical settings
     word divUScheme = "div(phi,U)";
     word divGradUScheme = "div((nuEff*dev2(T(grad(U)))))";
     word divNuTildaScheme = "div(phi,nuTilda)";
 
-    fvMesh& mesh = meshPtr_();
-    const Time& runTime = runTimePtr_;
+    const fvSolution& myFvSolution = mesh.thisDb().lookupObject<fvSolution>("fvSolution");
+    dictionary solverDictU = myFvSolution.subDict("solvers").subDict("U");
+    dictionary solverDictP = myFvSolution.subDict("solvers").subDict("p");
+    dictionary solverDictNuTilda = myFvSolution.subDict("solvers").subDict("nuTilda");
 
     // Get endTime, deltaT, and nTimeSteps
     // Note that here we assume uniform deltaT, but deltaT can be non-uniform
@@ -754,6 +759,249 @@ label DAIrkPimpleFoam::runFPAdj(
 
         // Setup the pseudoEqns for both stages
 #include "pseudoEqns.H"
+
+        // Calculate dfdw (partial)
+        {
+#include "adjRhs_dfdw.H"
+        }
+
+        // If adjResCnt == 0, adjRes should create the tape, otherwise the tape is reused
+        label adjResCnt = 0;
+
+        // Non-dual adjoint iterations with block GS sweeps
+        for (label sweepIndex = 0; sweepIndex < maxSweep; sweepIndex++)
+        {
+            Info << "Block GS sweep: " << sweepIndex + 1 << endl;
+
+            // * * * * * * * * * * * * * * * * * * //
+            // 1st stage
+
+            // Calculate adjoint residual
+#include "adjRes.H"
+            // ------ U1 -----
+
+            // Overwrite the rhs with adjURes, and then solve
+            pseudo_U1Eqn.source() = adjU1Res.primitiveField();
+
+            // Make sure that boundary contribution to source is zero,
+            // Alternatively, we can deduct source by boundary contribution, so that it would cancel out during solve.
+            forAll(pseudo_U1.boundaryField(), patchI)
+            {
+                const fvPatch& pp = pseudo_U1.boundaryField()[patchI].patch();
+                forAll(pp, faceI)
+                {
+                    label cellI = pp.faceCells()[faceI];
+                    pseudo_U1Eqn.source()[cellI] -= pseudo_U1Eqn.boundaryCoeffs()[patchI][faceI];
+                }
+            }
+
+            // Before solve, force xEqn.psi() to be solved into all zero
+            forAll(pseudo_U1.primitiveFieldRef(), cellI)
+            {
+                pseudo_U1.primitiveFieldRef()[cellI][0] = 0;
+                pseudo_U1.primitiveFieldRef()[cellI][1] = 0;
+                pseudo_U1.primitiveFieldRef()[cellI][2] = 0;
+            }
+
+            pseudo_U1Eqn.solve(solverDictU);
+
+            // Apply update
+            U1Psi -= pseudo_U1 * relaxU;
+
+            while (pimple.correct())
+            {
+                // Calculate adjoint residual
+#include "adjRes.H"
+                //#include "printAdjResL2.H"
+                // ------ p1 -----
+
+                // Overwrite the rhs with adjPRes, and then solve
+                pseudo_p1Eqn.source() = adjP1Res.primitiveField();
+
+                pseudo_p1Eqn.setReference(0, 0.0);
+
+                // Make sure that boundary contribution to source is zero,
+                // Alternatively, we can deduct source by boundary contribution, so that it would cancel out during solve.
+                forAll(pseudo_p1.boundaryField(), patchI)
+                {
+                    const fvPatch& pp = pseudo_p1.boundaryField()[patchI].patch();
+                    forAll(pp, faceI)
+                    {
+                        label cellI = pp.faceCells()[faceI];
+                        pseudo_p1Eqn.source()[cellI] -= pseudo_p1Eqn.boundaryCoeffs()[patchI][faceI];
+                    }
+                }
+
+                // Before solve, force xEqn.psi() to be solved into all zero
+                forAll(pseudo_p1.primitiveFieldRef(), cellI)
+                {
+                    pseudo_p1.primitiveFieldRef()[cellI] = 0;
+                }
+
+                pseudo_p1Eqn.solve(solverDictP);
+
+                // Apply update
+                p1Psi -= pseudo_p1 * relaxP;
+
+                // Calculate adjoint residual
+#include "adjRes.H"
+                //#include "printAdjResL2.H"
+                // -------- phi1  --------
+                // Apply update
+                phi1Psi += adjPhi1Res * relaxPhi;
+            }
+
+            // Calculate adjoint residual
+#include "adjRes.H"
+            //#include "printAdjResL2.H"
+            // ------ nuTilda1 -----
+
+            // Overwrite the rhs with adjNuTildaRes, and then solve
+            pseudo_nuTilda1Eqn.source() = adjNuTilda1Res.primitiveField();
+
+            // Make sure that boundary contribution to source is zero,
+            // Alternatively, we can deduct source by boundary contribution, so that it would cancel out during solve.
+            forAll(pseudo_nuTilda1.boundaryField(), patchI)
+            {
+                const fvPatch& pp = pseudo_nuTilda1.boundaryField()[patchI].patch();
+                forAll(pp, faceI)
+                {
+                    label cellI = pp.faceCells()[faceI];
+                    pseudo_nuTilda1Eqn.source()[cellI] -= pseudo_nuTilda1Eqn.boundaryCoeffs()[patchI][faceI];
+                }
+            }
+
+            // Before solve, force xEqn.psi to be solved into all zero
+            forAll(pseudo_nuTilda1.primitiveFieldRef(), cellI)
+            {
+                pseudo_nuTilda1.primitiveFieldRef()[cellI] = 0;
+            }
+
+            pseudo_nuTilda1Eqn.solve(solverDictNuTilda);
+
+            // Apply update
+            nuTilda1Psi -= pseudo_nuTilda1 * relaxNuTilda;
+
+            // * * * * * * * * * * * * * * * * * * //
+            // 2nd stage
+
+            // Calculate adjoint residual
+#include "adjRes.H"
+            //#include "printAdjResL2.H"
+            // ------ U2 -----
+
+            // Overwrite the rhs with adjURes, and then solve
+            pseudo_U2Eqn.source() = adjU2Res.primitiveField();
+
+            // Make sure that boundary contribution to source is zero,
+            // Alternatively, we can deduct source by boundary contribution, so that it would cancel out during solve.
+            forAll(pseudo_U2.boundaryField(), patchI)
+            {
+                const fvPatch& pp = pseudo_U2.boundaryField()[patchI].patch();
+                forAll(pp, faceI)
+                {
+                    label cellI = pp.faceCells()[faceI];
+                    pseudo_U2Eqn.source()[cellI] -= pseudo_U2Eqn.boundaryCoeffs()[patchI][faceI];
+                }
+            }
+
+            // Before solve, force xEqn.psi() to be solved into all zero
+            forAll(pseudo_U2.primitiveFieldRef(), cellI)
+            {
+                pseudo_U2.primitiveFieldRef()[cellI][0] = 0;
+                pseudo_U2.primitiveFieldRef()[cellI][1] = 0;
+                pseudo_U2.primitiveFieldRef()[cellI][2] = 0;
+            }
+
+            pseudo_U2Eqn.solve(solverDictU);
+
+            // Apply update
+            U2Psi -= pseudo_U2 * relaxU;
+
+            while (pimple.correct())
+            {
+                // Calculate adjoint residual
+#include "adjRes.H"
+                //#include "printAdjResL2.H"
+                // ------ p2 -----
+
+                // Overwrite the rhs with adjPRes, and then solve
+                pseudo_p2Eqn.source() = adjP2Res.primitiveField();
+
+                pseudo_p2Eqn.setReference(0, 0.0);
+
+                // Make sure that boundary contribution to source is zero,
+                // Alternatively, we can deduct source by boundary contribution, so that it would cancel out during solve.
+                forAll(pseudo_p2.boundaryField(), patchI)
+                {
+                    const fvPatch& pp = pseudo_p2.boundaryField()[patchI].patch();
+                    forAll(pp, faceI)
+                    {
+                        label cellI = pp.faceCells()[faceI];
+                        pseudo_p2Eqn.source()[cellI] -= pseudo_p2Eqn.boundaryCoeffs()[patchI][faceI];
+                    }
+                }
+
+                // Before solve, force xEqn.psi() to be solved into all zero
+                forAll(pseudo_p2.primitiveFieldRef(), cellI)
+                {
+                    pseudo_p2.primitiveFieldRef()[cellI] = 0;
+                }
+
+                pseudo_p2Eqn.solve(solverDictP);
+
+                // Apply update
+                p2Psi -= pseudo_p2 * relaxP;
+
+                // Calculate adjoint residual
+#include "adjRes.H"
+                //#include "printAdjResL2.H"
+                // -------- phi2  --------
+                // Apply update
+                phi2Psi += adjPhi2Res * relaxPhi;
+            }
+
+            // Calculate adjoint residual
+#include "adjRes.H"
+            //#include "printAdjResL2.H"
+            // ------ nuTilda2 -----
+
+            // Overwrite the rhs with adjNuTildaRes, and then solve
+            pseudo_nuTilda2Eqn.source() = adjNuTilda2Res.primitiveField();
+
+            // Make sure that boundary contribution to source is zero,
+            // Alternatively, we can deduct source by boundary contribution, so that it would cancel out during solve.
+            forAll(pseudo_nuTilda2.boundaryField(), patchI)
+            {
+                const fvPatch& pp = pseudo_nuTilda2.boundaryField()[patchI].patch();
+                forAll(pp, faceI)
+                {
+                    label cellI = pp.faceCells()[faceI];
+                    pseudo_nuTilda2Eqn.source()[cellI] -= pseudo_nuTilda2Eqn.boundaryCoeffs()[patchI][faceI];
+                }
+            }
+
+            // Before solve, force xEqn.psi to be solved into all zero
+            forAll(pseudo_nuTilda2.primitiveFieldRef(), cellI)
+            {
+                pseudo_nuTilda2.primitiveFieldRef()[cellI] = 0;
+            }
+
+            pseudo_nuTilda2Eqn.solve(solverDictNuTilda);
+
+            // Apply update
+            nuTilda2Psi -= pseudo_nuTilda2 * relaxNuTilda;
+        }
+
+        // Reset and deactivate input for the adjRes tape
+        tape.reset();
+#include "deactivateW1.H"
+#include "deactivateW2.H"
+
+        Info << "Non-dual adjoint iterations finished,        Execution Time: " << runTime.elapsedCpuTime() << " s" << endl;
+
+        // * * * * * * * * * * * * * * * * * * //
+        // After the current step adjoint solve finishes
 
         stepIndex--;
         timeInstance -= deltaT;
