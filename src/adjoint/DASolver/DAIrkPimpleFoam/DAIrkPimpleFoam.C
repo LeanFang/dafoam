@@ -806,7 +806,7 @@ label DAIrkPimpleFoam::runFPAdj(
             pseudo_U1Eqn.solve(solverDictU);
 
             // Apply update
-            U1Psi -= pseudo_U1 * relaxU;
+            U1Psi -= pseudo_U1 * relaxU * adjRelaxStage1;
 
             while (pimple.correct())
             {
@@ -841,14 +841,14 @@ label DAIrkPimpleFoam::runFPAdj(
                 pseudo_p1Eqn.solve(solverDictP);
 
                 // Apply update
-                p1Psi -= pseudo_p1 * relaxP;
+                p1Psi -= pseudo_p1 * relaxP * adjRelaxStage1;
 
                 // Calculate adjoint residual
 #include "adjRes.H"
                 //#include "printAdjResL2.H"
                 // -------- phi1  --------
                 // Apply update
-                phi1Psi += adjPhi1Res * relaxPhi;
+                phi1Psi += adjPhi1Res * relaxPhi * adjRelaxStage1;
             }
 
             // Calculate adjoint residual
@@ -880,7 +880,7 @@ label DAIrkPimpleFoam::runFPAdj(
             pseudo_nuTilda1Eqn.solve(solverDictNuTilda);
 
             // Apply update
-            nuTilda1Psi -= pseudo_nuTilda1 * relaxNuTilda;
+            nuTilda1Psi -= pseudo_nuTilda1 * relaxNuTilda * adjRelaxStage1;
 
             // * * * * * * * * * * * * * * * * * * //
             // 2nd stage
@@ -916,7 +916,7 @@ label DAIrkPimpleFoam::runFPAdj(
             pseudo_U2Eqn.solve(solverDictU);
 
             // Apply update
-            U2Psi -= pseudo_U2 * relaxU;
+            U2Psi -= pseudo_U2 * relaxU * adjRelaxStage2;
 
             while (pimple.correct())
             {
@@ -951,14 +951,14 @@ label DAIrkPimpleFoam::runFPAdj(
                 pseudo_p2Eqn.solve(solverDictP);
 
                 // Apply update
-                p2Psi -= pseudo_p2 * relaxP;
+                p2Psi -= pseudo_p2 * relaxP * adjRelaxStage2;
 
                 // Calculate adjoint residual
 #include "adjRes.H"
                 //#include "printAdjResL2.H"
                 // -------- phi2  --------
                 // Apply update
-                phi2Psi += adjPhi2Res * relaxPhi;
+                phi2Psi += adjPhi2Res * relaxPhi * adjRelaxStage2;
             }
 
             // Calculate adjoint residual
@@ -990,7 +990,7 @@ label DAIrkPimpleFoam::runFPAdj(
             pseudo_nuTilda2Eqn.solve(solverDictNuTilda);
 
             // Apply update
-            nuTilda2Psi -= pseudo_nuTilda2 * relaxNuTilda;
+            nuTilda2Psi -= pseudo_nuTilda2 * relaxNuTilda * adjRelaxStage2;
         }
 
         // Reset and deactivate input for the adjRes tape

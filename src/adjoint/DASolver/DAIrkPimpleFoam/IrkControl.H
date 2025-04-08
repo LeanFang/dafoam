@@ -61,6 +61,24 @@ if (IRKDict.found("relaxStage2"))
     }
 }
 
+scalar adjRelaxStage1 = relaxStage1;
+if (IRKDict.found("adjRelaxStage1"))
+{
+    if (IRKDict.getScalar("adjRelaxStage1") > 0)
+    {
+        adjRelaxStage1 = IRKDict.getScalar("adjRelaxStage1");
+    }
+}
+
+scalar adjRelaxStage2 = relaxStage2;
+if (IRKDict.found("adjRelaxStage2"))
+{
+    if (IRKDict.getScalar("adjRelaxStage2") > 0)
+    {
+        adjRelaxStage2 = IRKDict.getScalar("adjRelaxStage2");
+    }
+}
+
 scalar relaxUEqn = 1.0;
 scalar relaxNuTildaEqn = 1.0;
 if (IRKDict.found("relaxNuTildaEqn"))
