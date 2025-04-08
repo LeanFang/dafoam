@@ -98,14 +98,6 @@ if (adjResCnt == 0)
         U2.boundaryFieldRef()[dvPatchI][cellI][0] = X;
     }
 
-    /*
-    U.correctBoundaryConditions();
-    U1.correctBoundaryConditions();
-    p1.correctBoundaryConditions();
-    U2.correctBoundaryConditions();
-    p2.correctBoundaryConditions();
-    */
-
     // Calculate the primal residuals scaled with mesh volume
     this->scaledPriResIrk(U, nuTilda, U1, p1, phi1, nuTilda1, nut1, U2, p2, phi2, nuTilda2, nut2, y, nu, deltaT, U1Res, p1Res, phi1Res, nuTilda1Res, U2Res, p2Res, phi2Res, nuTilda2Res, relaxUEqn);
 

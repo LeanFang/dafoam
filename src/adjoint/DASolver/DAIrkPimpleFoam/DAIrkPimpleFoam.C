@@ -1003,9 +1003,22 @@ label DAIrkPimpleFoam::runFPAdj(
         // * * * * * * * * * * * * * * * * * * //
         // After the current step adjoint solve finishes
 
+        // Accumulatively add dfndX to dFdX
+        {
+#include "dfdx.H"
+        }
+
+        // Calculate the rhs contribution to the next adjoint solve
+        if (stepIndex > 1)
+        {
+#include "adjRhs_init.H"
+        }
+
         stepIndex--;
         timeInstance -= deltaT;
     }
+
+    Info << "full dFdX: " << dFdX << endl;
 
 #endif
 
