@@ -4,12 +4,13 @@
     Version : v4
 
     Description:
-        Child class for field variable input
+        Child class for field variable input that change for each time step 
+        (unsteady)
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef DAInputField_H
-#define DAInputField_H
+#ifndef DAInputFieldUnsteady_H
+#define DAInputFieldUnsteady_H
 
 #include "DAInput.H"
 #include "addToRunTimeSelectionTable.H"
@@ -22,10 +23,10 @@ namespace Foam
 {
 
 /*---------------------------------------------------------------------------*\
-      Class DAInputField Declaration
+      Class DAInputFieldUnsteady Declaration
 \*---------------------------------------------------------------------------*/
 
-class DAInputField
+class DAInputFieldUnsteady
     : public DAInput
 {
 
@@ -36,15 +37,21 @@ protected:
     /// field type, can be either scalar or vector
     word fieldType_;
 
-    /// if it is vector fields, we can also provide components/indices
-    labelList indices_;
+    /// how many time step interval to use, 1 means updating the field every time step
+    label stepInterval_ = 1;
+
+    /// how many parameters to interpolate along the time, they could be the field it self
+    label nParameters_ = -1;
+
+    /// interpolation method
+    word interpolationMethod_ = "linear";
 
 public:
-    TypeName("field");
+    TypeName("fieldUnsteady");
     // Constructors
 
     //- Construct from components
-    DAInputField(
+    DAInputFieldUnsteady(
         const word inputName,
         const word inputType,
         fvMesh& mesh,
@@ -53,7 +60,7 @@ public:
         const DAIndex& daIndex);
 
     //- Destructor
-    virtual ~DAInputField()
+    virtual ~DAInputFieldUnsteady()
     {
     }
 
@@ -65,28 +72,16 @@ public:
         {
             if (this->distributed())
             {
-                return daIndex_.nLocalCells;
+                return daIndex_.nLocalCells * nParameters_;
             }
             else
             {
-                return daIndex_.nGlobalCells;
-            }
-        }
-        else if (fieldType_ == "vector")
-        {
-            label cSize = indices_.size();
-            if (this->distributed())
-            {
-                return daIndex_.nLocalCells * cSize;
-            }
-            else
-            {
-                return daIndex_.nGlobalCells * cSize;
+                return daIndex_.nGlobalCells * nParameters_;
             }
         }
         else
         {
-            FatalErrorIn("DAInputField::size") << "fieldType not valid" << exit(FatalError);
+            FatalErrorIn("DAInputFieldUnsteady::size") << "fieldType not valid" << exit(FatalError);
             return -1;
         }
     }

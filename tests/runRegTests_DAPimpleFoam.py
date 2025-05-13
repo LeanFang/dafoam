@@ -61,7 +61,8 @@ daOptions = {
             "directionMode": "fixedDirection",
             "direction": [0.0, 1.0, 0.0],
             "scale": 1.0,
-            "timeOp": "average",
+            "timeOp": "maxKS",
+            "coeffKS": 0.25,
         },
     },
     "adjStateOrdering": "cell",
@@ -76,6 +77,10 @@ daOptions = {
             "normalAxis": "y",
             "components": ["solver", "function"],
         },
+    },
+    "unsteadyCompOutput": {
+        "CD": ["CD"],
+        "CL": ["CL"],
     },
 }
 
@@ -142,7 +147,7 @@ derivDict = {}
 
 dvNames = ["shape", "patchV"]
 dvIndices = [[0], [0]]
-funcNames = ["cruise.solver.CD"]
+funcNames = ["cruise.solver.CD", "cruise.solver.CL"]
 
 # run the adjoint and forward ref
 run_tests(om, Top, gcomm, daOptions, funcNames, dvNames, dvIndices, funcDict, derivDict)

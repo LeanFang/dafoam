@@ -3,10 +3,6 @@
     DAFoam  : Discrete Adjoint with OpenFOAM
     Version : v4
 
-    This file is modified from OpenFOAM's source code
-    applications/solvers/stressAnalysis/solidDisplacementFoam/tractionDisplacement/
-    tractionDisplacementFvPatchVectorField.H
-
     OpenFOAM: The Open Source CFD Toolbox
 
     Copyright (C): 2011-2016 OpenFOAM Foundation
@@ -32,11 +28,12 @@
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef tractionDisplacementFvPatchVectorField_H
-#define tractionDisplacementFvPatchVectorField_H
+#ifndef fixedWallHeatFluxFvPatchScalarField_H
+#define fixedWallHeatFluxFvPatchScalarField_H
 
 #include "fvPatchFields.H"
 #include "fixedGradientFvPatchFields.H"
+#include "turbulenceModel.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -44,76 +41,61 @@ namespace Foam
 {
 
 /*---------------------------------------------------------------------------*\
-                   Class tractionDisplacementFvPatch Declaration
+                   Class fixedWallHeatFlux Declaration
 \*---------------------------------------------------------------------------*/
 
-class tractionDisplacementFvPatchVectorField
-    : public fixedGradientFvPatchVectorField
+class fixedWallHeatFluxFvPatchScalarField
+    : public fixedGradientFvPatchScalarField
 {
 
     // Private Data
 
-    vectorField traction_;
-    scalarField pressure_;
+    scalar heatFlux_;
+
+    scalar nu_;
+
+    scalar Pr_;
+
+    scalar Prt_;
+
+    scalar Cp_;
 
 public:
     //- Runtime type information
-    TypeName("tractionDisplacement");
+    TypeName("fixedWallHeatFlux");
 
     // Constructors
 
     //- Construct from patch and internal field
-    tractionDisplacementFvPatchVectorField(
+    fixedWallHeatFluxFvPatchScalarField(
         const fvPatch&,
-        const DimensionedField<vector, volMesh>&);
+        const DimensionedField<scalar, volMesh>&);
 
     //- Construct from patch, internal field and dictionary
-    tractionDisplacementFvPatchVectorField(
+    fixedWallHeatFluxFvPatchScalarField(
         const fvPatch&,
-        const DimensionedField<vector, volMesh>&,
+        const DimensionedField<scalar, volMesh>&,
         const dictionary&);
 
     //- Construct by mapping given
-    //  tractionDisplacementFvPatchVectorField onto a new patch
-    tractionDisplacementFvPatchVectorField(
-        const tractionDisplacementFvPatchVectorField&,
+    //  fixedWallHeatFluxFvPatchScalarField onto a new patch
+    fixedWallHeatFluxFvPatchScalarField(
+        const fixedWallHeatFluxFvPatchScalarField&,
         const fvPatch&,
-        const DimensionedField<vector, volMesh>&,
+        const DimensionedField<scalar, volMesh>&,
         const fvPatchFieldMapper&);
 
     //- Construct as copy
-    tractionDisplacementFvPatchVectorField(
-        const tractionDisplacementFvPatchVectorField&);
+    fixedWallHeatFluxFvPatchScalarField(
+        const fixedWallHeatFluxFvPatchScalarField&);
 
     //- Construct as copy setting internal field reference
-    tractionDisplacementFvPatchVectorField(
-        const tractionDisplacementFvPatchVectorField&,
-        const DimensionedField<vector, volMesh>&);
+    fixedWallHeatFluxFvPatchScalarField(
+        const fixedWallHeatFluxFvPatchScalarField&,
+        const DimensionedField<scalar, volMesh>&);
 
     // Member functions
 
-    // Access
-    /*
-    virtual const vectorField& traction() const
-    {
-        return traction_;
-    }
-
-    virtual vectorField& traction()
-    {
-        return traction_;
-    }
-
-    virtual const scalarField& pressure() const
-    {
-        return pressure_;
-    }
-
-    virtual scalarField& pressure()
-    {
-        return pressure_;
-    }
-*/
     //- Update the coefficients associated with the patch field
     virtual void updateCoeffs();
 
