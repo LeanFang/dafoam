@@ -549,7 +549,12 @@ label DAIrkPimpleFoam::solvePrimal()
         nut.correctBoundaryConditions();
 
         // Write to disk
-        runTime.write(); // This writes U, p, phi, nuTilda, nut
+        //runTime.write(); // This writes U, p, phi, nuTilda, nut
+        U.write();
+        p.write();
+        phi.write();
+        nuTilda.write();
+        nut.write();
         // Also write internal stages to disk (Radau23)
         U1.write();
         p1.write();
