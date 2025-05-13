@@ -6,6 +6,7 @@ Run Python tests for optimization integration
 from mpi4py import MPI
 from dafoam import PYDAFOAM
 import os
+from testFuncs import *
 
 gcomm = MPI.COMM_WORLD
 
@@ -19,6 +20,9 @@ os.chdir("./reg_test_files-main/ConvergentChannel")
 if gcomm.rank == 0:
     os.system("rm -rf 0/* processor* *.bin")
     os.system("cp -r 0.incompressible/* 0/")
+    replace_text_in_file(
+        "0/T", "fixedValue ;", "fixedWallHeatFlux; heatFlux 8.2; nu 1.5e-5; Pr 0.7; Prt 0.85; Cp 1004.0;"
+    )
     os.system("cp -r system.incompressible/* system/")
     os.system("cp -r constant/turbulenceProperties.sa constant/turbulenceProperties")
 
@@ -71,7 +75,7 @@ daOptions = {
             "patches": ["inlet"],
             "varName": "p",
             "varType": "scalar",
-            "component": 0,
+            "index": 0,
             "scale": 1.0,
         },
         "UMean": {
@@ -80,7 +84,7 @@ daOptions = {
             "patches": ["outlet"],
             "varName": "U",
             "varType": "vector",
-            "component": 0,
+            "index": 0,
             "scale": 1.0,
         },
         "skewness": {
@@ -139,7 +143,7 @@ daOptions = {
             "source": "allCells",
             "varName": "p",
             "varType": "scalar",
-            "component": 0,
+            "index": 0,
             "isSquare": 0,
             "multiplyVol": 1,
             "divByTotalVol": 0,
@@ -152,7 +156,7 @@ daOptions = {
             "max": [0.8, 0.8, 0.9],
             "varName": "U",
             "varType": "vector",
-            "component": 0,
+            "index": 0,
             "isSquare": 1,
             "multiplyVol": 0,
             "divByTotalVol": 1,
@@ -166,7 +170,7 @@ daOptions = {
             "mode": "surface",
             "varName": "wallHeatFlux",
             "varType": "scalar",
-            "components": [0],
+            "indices": [0],
             "timeDependentRefData": False,
         },
         "PVar": {
@@ -176,7 +180,7 @@ daOptions = {
             "mode": "field",
             "varName": "p",
             "varType": "scalar",
-            "components": [0],
+            "indices": [0],
             "timeDependentRefData": False,
         },
         "PProbe": {
@@ -187,7 +191,7 @@ daOptions = {
             "probePointCoords": [[0.51, 0.52, 0.53], [0.2, 0.3, 0.4]],
             "varName": "p",
             "varType": "scalar",
-            "components": [0],
+            "indices": [0],
             "timeDependentRefData": False,
         },
         "UOutVar": {
@@ -198,7 +202,7 @@ daOptions = {
             "mode": "surface",
             "varName": "U",
             "varType": "vector",
-            "components": [0],
+            "indices": [0],
             "timeDependentRefData": False,
         },
         "ResNorm": {
@@ -225,7 +229,7 @@ funcs_ref = {
     "CD": 2.2801022493682037,
     "CMZ": 7.1768354637131795,
     "TP1": 2.5561992647012914,
-    "HFX": 8.20332195479527,
+    "HFX": 8.200000003826663,
     "PMean": 77.80996323506456,
     "UMean": 15.469850053816028,
     "skewness": 1.3140396235456926,
@@ -236,11 +240,11 @@ funcs_ref = {
     "IRMaxKS": 9.132901616926853,
     "PVolSum": 23.576101529517096,
     "UVolSum": 2004.7819430730992,
-    "HVar": 67.87343828312974,
+    "HVar": 67.2400000627573,
     "PVar": 2.476982282327677,
     "PProbe": 3.6866882754983203,
     "UOutVar": 0.5085431532392312,
-    "ResNorm": 0.5124351615581738,
+    "ResNorm": 0.5124351660034533,
 }
 
 fail = 0
@@ -320,7 +324,7 @@ daOptions = {
             "mode": "surface",
             "varName": "wallHeatFlux",
             "varType": "scalar",
-            "components": [0],
+            "indices": [0],
             "timeDependentRefData": False,
         },
     },

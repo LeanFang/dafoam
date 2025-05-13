@@ -25,6 +25,7 @@ DARegression/DARegression.C
 DATimeOp/DATimeOp.C
 DATimeOp/DATimeOpFinal.C
 DATimeOp/DATimeOpAverage.C
+DATimeOp/DATimeOpMaxKS.C
 
 DAFunction/DAFunction.C
 DAFunction/DAFunctionForce.C
@@ -55,6 +56,7 @@ DAInput/DAInputStateVar.C
 DAInput/DAInputPatchVelocity.C
 DAInput/DAInputPatchVar.C
 DAInput/DAInputField.C
+DAInput/DAInputFieldUnsteady.C
 DAInput/DAInputThermalCoupling.C
 DAInput/DAInputRegressionPar.C
 DAInput/DAInputFvSourcePar.C
@@ -118,5 +120,6 @@ DAMisc/meshWaveFrozen/meshWaveFrozenPatchDistMethod.C
 DAMisc/pimpleControlDF/pimpleControlDF.C
 DAMisc/tractionDisplacement/tractionDisplacementFvPatchVectorField.C
 DAMisc/alphatWallFunctionIncomp/alphatWallFunctionIncompFvPatchScalarField.C
+DAMisc/fixedWallHeatFlux/fixedWallHeatFluxFvPatchScalarField.C
 
 LIB = $(DAFOAM_ROOT_PATH)/OpenFOAM/sharedLibs/libDASolver$(WM_CODI_AD_LIB_POSTFIX)
