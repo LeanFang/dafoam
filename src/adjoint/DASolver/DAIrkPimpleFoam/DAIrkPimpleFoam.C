@@ -549,18 +549,22 @@ label DAIrkPimpleFoam::solvePrimal()
         nut.correctBoundaryConditions();
 
         // Write to disk
-        //runTime.write(); // This writes U, p, phi, nuTilda, nut
-        U.write();
-        p.write();
-        phi.write();
-        nuTilda.write();
-        nut.write();
-        // Also write internal stages to disk (Radau23)
-        U1.write();
-        p1.write();
-        phi1.write();
-        nuTilda1.write();
-        nut1.write();
+        Info << "Current time index is: " << runTime.timeIndex() << endl;
+        if (runTime.timeIndex() % writeInterval == 0)
+        {
+            //runTime.write(); // This writes U, p, phi, nuTilda, nut
+            U.write();
+            p.write();
+            phi.write();
+            nuTilda.write();
+            nut.write();
+            // Also write internal stages to disk (Radau23)
+            U1.write();
+            p1.write();
+            phi1.write();
+            nuTilda1.write();
+            nut1.write();
+        }
 
         // Calculate local obj: meanT1 and meanT2
         scalar meanU1 = calcMeanU(U1);

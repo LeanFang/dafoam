@@ -142,3 +142,12 @@ if (IRKDict.found("checkURef"))
         checkURef = "no";
     }
 }
+
+label writeInterval = 1;
+if (IRKDict.found("writeInterval"))
+{
+    if (IRKDict.getLabel("writeInterval") > 0)
+    {
+        writeInterval = IRKDict.getLabel("writeInterval");
+    }
+}
