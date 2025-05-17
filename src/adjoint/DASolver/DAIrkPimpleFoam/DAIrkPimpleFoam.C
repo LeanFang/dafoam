@@ -517,7 +517,7 @@ label DAIrkPimpleFoam::solvePrimal()
 #include "nuTilda2EqnIrkPimple.H"
             }
 
-            if (checkPriRes == "yes")
+            if (printPriRes == "yes")
             {
                 this->calcPriResIrkOrig(U, U1, p1, phi1, nuTilda1, nut1, U2, p2, phi2, nuTilda2, nut2, nu, deltaT, U1Res, p1Res, phi1Res, U2Res, p2Res, phi2Res, relaxUEqn);
                 this->calcPriSAResIrkOrig(nuTilda, U1, phi1, nuTilda1, U2, phi2, nuTilda2, y, nu, deltaT, nuTilda1Res, nuTilda2Res);
@@ -732,7 +732,7 @@ label DAIrkPimpleFoam::runFPAdj(
         // Read states for Radau23
 #include "readRadau23.H"
 
-        if (checkPriRes == "yes")
+        if (printPriRes == "yes")
         {
             this->calcPriResIrkOrig(U, U1, p1, phi1, nuTilda1, nut1, U2, p2, phi2, nuTilda2, nut2, nu, deltaT, U1Res, p1Res, phi1Res, U2Res, p2Res, phi2Res, relaxUEqn);
             this->calcPriSAResIrkOrig(nuTilda, U1, phi1, nuTilda1, U2, phi2, nuTilda2, y, nu, deltaT, nuTilda1Res, nuTilda2Res);
@@ -996,6 +996,18 @@ label DAIrkPimpleFoam::runFPAdj(
 
             // Apply update
             nuTilda2Psi -= pseudo_nuTilda2 * relaxNuTilda * adjRelaxStage2;
+
+            if (printAdjRes == "yes")
+            {
+                Info << "L2 norm of adjU1Res: " << this->L2norm(adjU1Res.primitiveField()) << endl;
+                Info << "L2 norm of adjU2Res: " << this->L2norm(adjU2Res.primitiveField()) << endl;
+                Info << "L2 norm of adjP1Res: " << this->L2norm(adjP1Res.primitiveField()) << endl;
+                Info << "L2 norm of adjP2Res: " << this->L2norm(adjP2Res.primitiveField()) << endl;
+                Info << "L2 norm of adjPhi1Res: " << this->L2norm(adjPhi1Res) << endl;
+                Info << "L2 norm of adjPhi2Res: " << this->L2norm(adjPhi2Res) << endl;
+                Info << "L2 norm of adjNuTilda1Res: " << this->L2norm(adjNuTilda1Res.primitiveField()) << endl;
+                Info << "L2 norm of adjNuTilda2Res: " << this->L2norm(adjNuTilda2Res.primitiveField()) << endl;
+            }
         }
 
         // Reset and deactivate input for the adjRes tape

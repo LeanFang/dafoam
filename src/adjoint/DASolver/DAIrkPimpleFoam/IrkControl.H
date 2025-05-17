@@ -61,7 +61,7 @@ if (IRKDict.found("relaxStage2"))
     }
 }
 
-scalar adjRelaxStage1 = relaxStage1;
+scalar adjRelaxStage1 = 0.5;
 if (IRKDict.found("adjRelaxStage1"))
 {
     if (IRKDict.getScalar("adjRelaxStage1") > 0)
@@ -70,7 +70,7 @@ if (IRKDict.found("adjRelaxStage1"))
     }
 }
 
-scalar adjRelaxStage2 = relaxStage2;
+scalar adjRelaxStage2 = 0.5;
 if (IRKDict.found("adjRelaxStage2"))
 {
     if (IRKDict.getScalar("adjRelaxStage2") > 0)
@@ -98,18 +98,33 @@ if (IRKDict.found("maxSweep"))
     }
 }
 
-word checkPriRes = "yes";
-if (IRKDict.found("checkPriRes"))
+word printPriRes = "no";
+if (IRKDict.found("printPriRes"))
 {
-    checkPriRes = IRKDict.getWord("checkPriRes");
+    printPriRes = IRKDict.getWord("printPriRes");
 
-    Info << "If checking primal residual: " << checkPriRes << endl;
+    Info << "If checking primal residual: " << printPriRes << endl;
 
-    if (checkPriRes != "yes" && checkPriRes != "no")
+    if (printPriRes != "yes" && printPriRes != "no")
     {
-        Info << "checkPriRes not recognized, Using the default: yes" << endl
+        Info << "printPriRes not recognized, Using the default: no" << endl
              << "Options are: yes, no" << endl;
-        checkPriRes = "yes";
+        printPriRes = "yes";
+    }
+}
+
+word printAdjRes = "no";
+if (IRKDict.found("printAdjRes"))
+{
+    printAdjRes = IRKDict.getWord("printAdjRes");
+
+    Info << "If checking primal residual: " << printAdjRes << endl;
+
+    if (printAdjRes != "yes" && printAdjRes != "no")
+    {
+        Info << "printAdjRes not recognized, Using the default: no" << endl
+             << "Options are: yes, no" << endl;
+        printAdjRes = "yes";
     }
 }
 
