@@ -549,7 +549,8 @@ label DAIrkPimpleFoam::solvePrimal()
         nut.correctBoundaryConditions();
 
         // Write to disk
-        Info << "Current time index is: " << runTime.timeIndex() << endl;
+        //Info << "Current time index is: " << runTime.timeIndex() << endl;
+        //Info << "Remainder by writeInterval: " << runTime.timeIndex() % writeInterval << endl;
         if (runTime.timeIndex() % writeInterval == 0)
         {
             //runTime.write(); // This writes U, p, phi, nuTilda, nut
