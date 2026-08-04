@@ -1993,7 +1993,7 @@ class DAFoamVSPVolume(ExplicitComponent):
             raise ValueError("slice_dir must be 'x', 'y', or 'z', got '%s'" % slice_dir)
         analysis_name = "MassProp"
         vsp.SetAnalysisInputDefaults(analysis_name)
-        vsp.SetIntAnalysisInput(analysis_name, "NumSlices", [n_slices])
+        vsp.SetIntAnalysisInput(analysis_name, "NumMassSlices", [n_slices])
         vsp.SetIntAnalysisInput(analysis_name, "MassSliceDir", [_dir_map[slice_dir.lower()]])
 
         shown_geom_ids = None
